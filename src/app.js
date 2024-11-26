@@ -19,12 +19,14 @@ app.use(cookieParser()); //to aceess the browser cookoe of user and perform read
 
 // routes import
 import userRouter from "./routes/user.route.js"
+import taskRoutes from "./routes/task.routes.js";
 
 // Route declaration
 app.use("/api/v1/users", userRouter); // Fixed double slashes
+app.use("/api/v1/task",taskRoutes)
 
 // Health check route
-app.get('/health', (req, res) => { // Fixed the route declaration syntax
+app.get('/health', (req, res) => { 
   return res.status(200).json({
     message: 'Working',
   });
