@@ -2,13 +2,15 @@ import { ApiError } from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { User } from "../modals/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
+
 const genrateAcessAndRefreshTokens = async (userId) => {
   try {
     const user = await User.findById(userId);
-    console.log(user)
+    console.log(user);
     const accessToken = await user.genrateAcessToken();
     const refreshtoken = await user.genrateRefreshToken();
-   
+
     user.refreshtoken = refreshtoken;
     user.save({ validateBeforSave: false });
     return { accessToken, refreshtoken };
@@ -20,7 +22,8 @@ const genrateAcessAndRefreshTokens = async (userId) => {
   }
 };
 const registerUser = asyncHandler(async (req, res) => {
-  const { fullname, email, username, password } = req.body;
+  const { fullname, email, username, password, role, phone } = req.body;
+  console.log(fullname, email, username, password, phone, role);
   if (
     [fullname, email, username, password].some((field) => {
       field?.trim() === "";
@@ -28,16 +31,36 @@ const registerUser = asyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "All filed are Required");
   }
+
+  const phoneRegex = /^\d{10}$/;
+  if (!phone || !phoneRegex.test(phone)) {
+    throw new ApiError(400, "Phone number must be a valid 10-digit number");
+  }
+
   const existeduser = User.findOne({
     $or: [{ username }, { email }],
   });
   if (!existeduser) {
     throw new ApiError(409, "user already Exist");
   }
+  const avatarLocalPath = req.files?.avatar[0]?.path;
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar file is required");
+  }
+
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
+  if (!avatar) {
+    throw new ApiError(400, "Avatar file is required");
+  }
+  console.log(avatar.url);
   const user = await User.create({
     fullname,
+    avatar: avatar.url,
     email,
     password,
+    phone,
+    role,
     username: username.toLowerCase(),
   });
   const createdUser = await User.findById(user._id).select(
@@ -52,8 +75,9 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 const loginUser = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
-  if (!username || !email) {
-    throw new ApiError(400, "username and Password required!");
+  
+  if (!password || (!username && !email)) {
+    throw new ApiError(400, "Password and either username or email are required!");
   }
   const user = await User.findOne({
     $or: [{ email }, { username }],
@@ -80,32 +104,63 @@ const loginUser = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshtoken, options)
     .json(
-      new ApiResponse(200, {
-        user: loggedInUser,
-        accessToken,
-        refreshtoken,
-      },"user LoggedIN successfully"),
+      new ApiResponse(
+        200,
+        "user LoggedIN successfully",
+        {
+          user: loggedInUser,
+          accessToken,
+          refreshtoken,
+        },
+        
+      )
     );
 });
-const logoutUser=asyncHandler(async(req,res)=>{
- await User.findByIdAndUpdate(req.user._id,{
-  $set:{
-    refreshtoken:undefined
+const logoutUser = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        refreshtoken: undefined,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, "user loggedout!"));
+});
+const getAllUsers = asyncHandler(async (req, res) => {
+  try {
+    const users = await User.find().select("-password -refreshtoken");
+    if (!users.length) {
+      throw new ApiError(404, "No users found.");
+    }
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Users fetched successfully.", users));
+  } catch (error) {
+    throw new ApiError(500, error.message || "Failed to fetch users.");
   }
-},
-{
-  new:true
-}
-)
-const options = {
-  httpOnly: true,
-  secure: true,
-};
-return res.status(200)
-.clearCookie("accessToken", options)
-.clearCookie("refreshToken" , options)
-.json(new ApiResponse(200,"user loggedout!"))
+});
+const getUserById = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
 
-  
-})
-export { registerUser,loginUser,logoutUser };
+  const user = await User.findById(userId).select("-password -refreshtoken");
+  if (!user) {
+    throw new ApiError(404, "User not found.");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "User fetched successfully.", user));
+});
+export { registerUser, loginUser, logoutUser, getAllUsers, getUserById };
