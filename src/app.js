@@ -1,35 +1,40 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+
 const app = express();
-app.use(
-  cors()
-);
+
+// CORS Configuration
+const corsOptions = {
+  origin: "https://fronted-assignment.vercel.app", // Replace with your frontend URL
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  credentials: true, // Allow cookies to be sent
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+app.use(cors(corsOptions));
+
 app.use(
   express.json({
-    limit: "16kb", // alow the data which size is 16kb
+    limit: "16kb",
   })
 );
-app.use(express.urlencoded({ extended: true, limit: "16kb" })); //handle the data which comming throgh  headers and manage whitepsace.
-app.use(express.static("public")); // static is handle files pdf and store it on sever, i have pass the folder name where we keep the file.
-app.use(cookieParser()); //to aceess the browser cookoe of user and perform read and write opration from server  , set secure cookee in user browser.
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(express.static("public"));
+app.use(cookieParser());
 
-// routes import
-import userRouter from "./routes/user.route.js"
+// Routes import
+import userRouter from "./routes/user.route.js";
 import taskRoutes from "./routes/task.routes.js";
 
 // Route declaration
-app.use("/api/v1/users", userRouter); // Fixed double slashes
-app.use("/api/v1/task",taskRoutes)
+app.use("/api/v1/users", userRouter);
+app.use("/api/v1/task", taskRoutes);
 
 // Health check route
-app.get('/health', (req, res) => { 
+app.get("/health", (req, res) => {
   return res.status(200).json({
-    message: 'Working',
+    message: "Working",
   });
 });
-
-
-
 
 export { app };
