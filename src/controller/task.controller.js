@@ -26,7 +26,7 @@ const createTask = asyncHandler(async (req, res) => {
 
   return res
     .status(201)
-    .json(new ApiResponse(201,task, "Task created successfully."));
+    .json(new ApiResponse(201, "Task created successfully.",task));
 });
 const getTasks = asyncHandler(async (req, res) => {
     const { sortBy = "dueDate", order = "asc" } = req.query; // Default sorting by due date in ascending order
@@ -47,7 +47,7 @@ const getTasks = asyncHandler(async (req, res) => {
   
     return res
       .status(200)
-      .json(new ApiResponse(200,tasks,  "Tasks fetched successfully.",));
+      .json(new ApiResponse(200, "Tasks fetched successfully.",tasks));
   });
   const getTaskDetails = asyncHandler(async (req, res) => {
     const { taskId } = req.params;
@@ -67,7 +67,7 @@ const getTasks = asyncHandler(async (req, res) => {
   
     return res
       .status(200)
-      .json(new ApiResponse(200, task, "Task details fetched successfully."));
+      .json(new ApiResponse(200,"Task details fetched successfully.",task));
   });
   const editTask = asyncHandler(async (req, res) => {
     const { taskId } = req.params;
@@ -97,7 +97,7 @@ const getTasks = asyncHandler(async (req, res) => {
   
     return res
       .status(200)
-      .json(new ApiResponse(200, updatedTask, "Task updated successfully."));
+      .json(new ApiResponse(200, "Task updated successfully.", updatedTask));
   });
   const deleteTask = asyncHandler(async (req, res) => {
     const { taskId } = req.params;
@@ -117,7 +117,7 @@ const getTasks = asyncHandler(async (req, res) => {
   
     return res
       .status(200)
-      .json(new ApiResponse(200, null, "Task deleted successfully."));
+      .json(new ApiResponse(200,"Task deleted successfully.",null));
   });
   
   
