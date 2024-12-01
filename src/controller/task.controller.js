@@ -26,7 +26,7 @@ const createTask = asyncHandler(async (req, res) => {
 
   return res
     .status(201)
-    .json(new ApiResponse(201, task, "Task created successfully."));
+    .json(new ApiResponse(201,task, "Task created successfully."));
 });
 const getTasks = asyncHandler(async (req, res) => {
     const { sortBy = "dueDate", order = "asc" } = req.query; // Default sorting by due date in ascending order
