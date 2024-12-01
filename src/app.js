@@ -6,7 +6,7 @@ const app = express();
 
 // CORS Configuration
 const corsOptions = {
-  origin: "https://fronted-assignment.vercel.app", // Replace with your frontend URL
+  origin: "*", // Replace with your frontend URL
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true, // Allow cookies to be sent
   allowedHeaders: ["Content-Type", "Authorization"],
